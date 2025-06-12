@@ -1,0 +1,141 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for roles/backendserver
+    - name: installing my-ssql client
+      apt:
+        name:
+          - mysql-client
+          - software-properties-common
+        state: present
+
+    - name: add deadsnake repo
+      apt_repository:
+        repo: ppa:deadsnakes/ppa
+
+    - name: instllign python3.8
+      apt:
+        name: python3.8
+        state: present
+
+    - name: ptyhon 3.12 aleternatives
+      command: update-alternatives --install /usr/bin/python3 python3 {{python312_path}} 1
+      ignore_errors: yes
+
+    - name: python 3.8 alternatives
+      command: update-alternatives --install /usr/bin/python3 python3 {{python38_path}} 2
+
+    - name: create chatapp directory
+      file:
+        path: "{{app_dir}}"
+        state: directory
+        owner: ubuntu
+        group: ubuntu
+
+    - name: clonging the file into the root directory /chatapp
+      ansible.builtin.git:
+        repo: https://github.com/Aryankumar25/chatapp-cloud
+        dest: /chatapp
+        version: main
+        force: yes
+
+    - name: setting owneshio of chatapp directory
+      file:
+        path: "{{app_dir}}"
+        state: directory
+        recurse: yes
+        owner: ubuntu
+        group: ubuntu
+
+    - name: Install Python development tools
+      apt:
+        name:
+          - python3
+          - python3-pip
+          - python3-dev
+          - pkg-config
+          - libmysqlclient-dev
+          - default-libmysqlclient-dev
+          - build-essential
+          - python3.8-distutils
+        state: present
+
+    - name: installing virtaul env
+      shell: pip3 install virtualenv
+
+    - name: Set PATH environment variable
+      shell: echo 'export PATH="$HOME/.local/bin:$PATH"' >> /home/ubuntu/.bashrc
+      args:
+        executable: /bin/bash
+
+    - name: Create Python virtual environment
+      command: virtualenv -p /usr/bin/python3 venv
+      args:
+        chdir: "{{ app_dir }}"
+
+    - name: Install Python dependencies
+      shell: |
+        source venv/bin/activate
+        pip3 install -r requirements.txt
+        pip3 install mysqlclient
+        pip install python-dotenv
+      args:
+        chdir: "{{ app_dir }}"
+        executable: /bin/bash
+
+    - name: Create .env file
+      copy:
+        dest: "{{ env_path }}"
+        content: |
+          DB_NAME='chatapp'
+          DB_USER='chatappadmin'
+          DB_PASSWORD='password'
+          DB_HOST={{ db_host }}
+
+    - name: Set ownership for .env
+      file:
+        path: "{{ env_path }}"
+        owner: ubuntu
+        group: ubuntu
+
+    - name: Overwrite settings.py with template
+      template:
+        src: ~/roletest/roles/backendserver/templates/settingsfile.j2
+        dest: /chatapp/fundoo/fundoo/settings.py
+        owner: ubuntu
+        group: ubuntu
+        mode: '0644'
+
+    - name: Ensure system dependencies are installed
+      apt:
+        name:
+          - python3-dev
+          - default-libmysqlclient-dev
+          - build-essential
+        state: present
+
+    - name: Install mysqlclient inside virtualenv and run migrations
+      shell: |
+        source /chatapp/venv/bin/activate
+        pip apt install --reinstall python3-apt
+        sudo apt install python3.8-dev libmysqlclient-dev build essential
+        pip install mysqlclient
+        python /chatapp/fundoo/manage.py migrate
+      args:
+        executable: /bin/bash
+    - name: Create systemd service for ChatApp
+      template:
+        src: ~/roletest/roles/backendserver/templates/servicefile.j2
+        dest: /etc/systemd/system/chatappdaemon.service
+        owner: ubuntu
+        group: ubuntu
+        mode: '0644'
+
+    - name: Reload systemd
+      systemd:
+        daemon_reload: yes
+
+    - name: Start ChatApp service
+      systemd:
+        name: chatappdaemon.service
+        state: started
+        enabled: yes

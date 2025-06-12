@@ -1,0 +1,13 @@
+[Unit]
+Description=Chatapp Service
+After=network.target
+
+[Service]
+User=ubuntu
+Group=ubuntu
+EnvironmentFile=/.env
+WorkingDirectory=/chatapp/fundoo
+ExecStart=/bin/bash -c "cd /chatapp/ && source venv/bin/activate && cd /chatapp/fundoo && /chatapp/venv/bin/gunicorn --workers 3 --bind 0.0.0.0:8000 fundoo.wsgi:application"
+
+[Install]
+WantedBy=multi-user.target

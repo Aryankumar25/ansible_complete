@@ -1,0 +1,22 @@
+- name: Configure Database
+  hosts: database
+  become: true
+  vars_files:
+    - roles/webserver/vars/main.yml
+  roles:
+    - databaseserver
+
+- name: Configure Backend
+  hosts: backend
+  become: true
+  vars_files:
+    - roles/backendserver/vars/main.yml
+  roles:
+    - backendserver
+
+- name: Configure Frontend
+  hosts: frontend
+  become: true
+  roles:
+    - webserver
+

@@ -1,0 +1,33 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for roles/databaseserver
+    - name: update apt
+      shell: sudo apt-get update
+
+    - name: MySQL Server
+      shell: sudo apt-get install -y mysql-server
+
+    - name: Set bind
+      shell: |
+        sed -i 's/^bind-address.*/bind-address = 0.0.0.0/' /etc/mysql/mysql.conf.d/mysqld.cnf
+        sed -i 's/^mysqlx-bind-address.*/mysqlx-bind-address = 0.0.0.0/' /etc/mysql/mysql.conf.d/mysqld.cnf
+
+    - name: stopingb MySQL service
+      shell: sudo systemctl stop mysql.service
+
+    - name: start MySQL service
+      shell: systemctl start mysql.service
+
+    - name: run mysql_secure_installation
+      shell: |
+        echo -e "y\n0\ny\ny\ny\ny" | mysql_secure_installation
+
+    - name:  grant privileges
+      shell: |
+        mysql -e "CREATE USER 'chatappadmin' IDENTIFIED BY 'password';"
+        mysql -e "CREATE DATABASE chatapp;"
+        mysql -e "GRANT ALL PRIVILEGES ON chatapp.* TO 'chatappadmin'@'%';"
+        mysql -e "FLUSH PRIVILEGES;"
+
+    - name: enable MySQL service
+      shell: systemctl enable mysql.service
