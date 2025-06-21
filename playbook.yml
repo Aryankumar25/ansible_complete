@@ -1,3 +1,4 @@
+# this is docker compose file of the django application
 - name: Configure Database
   hosts: database
   become: true
