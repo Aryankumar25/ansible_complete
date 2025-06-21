@@ -31,3 +31,6 @@
 
     - name: enable MySQL service
       shell: systemctl enable mysql.service
+# entire tasks has been written in this file 
+
+
